@@ -51,12 +51,12 @@ func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v.View(w, r, item)
 }
 
-func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item *reflect.Value) {
+func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item any) {
 	jd := json.NewDecoder(r.Body)
-	log.Printf("PREPOST: %v", item)
-	i := item.Interface()
-	jd.Decode(i)
-	log.Printf("POST: %v", item)
+	i := *item.(*any)
+	log.Printf("PREPOST: %v", i)
+	jd.Decode(&i)
+	log.Printf("POST: %v", i)
 }
 
 type ViewData struct {
@@ -65,7 +65,7 @@ type ViewData struct {
 	Data   string
 }
 
-func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item *reflect.Value) {
+func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
 	//templates, err := template.ParseGlob("./templates/*")
 	//if err != nil {
 	//log.Printf("Problem parsing template glob: %v", err)
@@ -79,7 +79,9 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item *reflect.Valu
 
 	var err error
 
-	d, err := json.Marshal(item.Interface())
+	i := *item.(*any)
+
+	d, err := json.Marshal(i)
 	if err != nil {
 		log.Printf("problem jsonifying: %v", err)
 	}
@@ -92,7 +94,7 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item *reflect.Valu
 		return
 	}
 	s := jsonschema.Document{}
-	s.Read(item)
+	s.Read(i)
 	sb, _ := s.Marshal()
 	vd := ViewData{Name: "Test", Schema: template.JS(sb), Data: string(d)}
 	err = templates.ExecuteTemplate(w, "main.html", vd)
@@ -102,7 +104,7 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item *reflect.Valu
 }
 
 // traverse the path of struct fields, array indeces, and map keys to get to the final node we're working with.
-func (v *Viewer) ResolvePath(fullpath string) (*reflect.Value, error) {
+func (v *Viewer) ResolvePath(fullpath string) (any, error) {
 	path_parts := strings.Split(fullpath, "/")
 
 	position := reflect.ValueOf(&v.Root).Elem()
@@ -146,7 +148,7 @@ func (v *Viewer) ResolvePath(fullpath string) (*reflect.Value, error) {
 
 	log.Printf("can addr: %v", position.CanAddr())
 
-	return &position, nil
+	return position.Addr().Interface(), nil
 
 }
 
