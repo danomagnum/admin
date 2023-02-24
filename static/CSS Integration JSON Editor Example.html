@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>CSS Integration JSON Editor Example</title>
+    
+    <link rel="stylesheet" href="CSS%20Integration%20JSON%20Editor%20Example_files/spectre.min.css">
+    <link rel="stylesheet" href="CSS%20Integration%20JSON%20Editor%20Example_files/spectre-exp.min.css">
+    <link rel="stylesheet" href="CSS%20Integration%20JSON%20Editor%20Example_files/spectre-icons.min.css">
+
+    <script src="CSS%20Integration%20JSON%20Editor%20Example_files/jsoneditor.min.js"></script>
+    
+    <script>
+    // Set the default CSS theme and icon library globally
+    JSONEditor.defaults.theme = 'spectre';
+    JSONEditor.defaults.iconlib = 'spectre';
+    </script>
+    <style>
+      .container {
+        max-width:960px;
+        margin: 0 auto
+      }
+    </style>
+  <style id="theme-default"></style><style id="theme-spectre"></style></head>
+  <body>
+    <div class="container">
+      <div class="columns">
+        <h1 class="col-md-12">CSS Integration JSON Editor Example</h1>
+      </div>
+      <div class="columns">
+        <div class="column col-md-6">
+          <p>JSON Editor supports these popular CSS frameworks:</p>
+          <ul>
+            <li>bootstrap 4</li>
+            <li>spectre.css (shown here)</li>
+            <li>tailwind</li>
+          </ul>  
+        </div>
+        <div class="column col-md-6">
+          <p>JSON Editor supports these popular icon libraries:</p>
+          <ul>
+            <li>jQueryUI</li>
+            <li>Font Awesome 3</li>
+            <li>Font Awesome 4</li>
+            <li>Font Awesome 5</li>
+            <li>spectre.css (shown here)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column col-md-12">
+          <button id="submit" class="tiny">Submit (console.log)</button>
+          <button id="restore" class="secondary tiny">Restore to Default</button>
+          <span id="valid_indicator" class="label success">valid</span>  
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column col-md-12 je-ready" id="editor_holder" data-theme="spectre"><div data-schemaid="person" data-schematype="object" data-schemapath="root" class="je-object__container"><h4 style="display: inline-block;" class="je-object__title"><button type="button" title="Collapse" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-collapse json-editor-btntype-toggle"><i class="icon icon-arrow-down"></i><span> </span></button><label>Person</label></h4><span class="btn-group je-object__controls"><div style="display: none;" class="je-modal"><textarea class="form-input je-edit-json--textarea"></textarea><button type="button" title="Save" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-save json-editor-btntype-save"><i class="icon icon-check"></i><span> Save</span></button><button type="button" title="Copy" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-copy json-editor-btntype-copy"><i class="icon icon-copy"></i><span> Copy</span></button><button type="button" title="Cancel" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-cancel json-editor-btntype-cancel"><i class="icon icon-cross"></i><span> Cancel</span></button></div><div style="display: none;" class="je-modal"><div class="property-selector"><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;Location</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;Pets</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;Cars</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;name</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;age</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;gender</label></div></div><input type="text" class="form-input property-selector-input" placeholder="Property name..."><button type="button" title="Add" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-add json-editor-btntype-add"><i class="icon icon-plus"></i><span> Add</span></button><div style="clear: both;"></div></div><button type="button" title="Edit JSON" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-edit json-editor-btntype-editjson"><i class="icon icon-edit"></i><span> JSON</span></button><button type="button" title="Object Properties" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-edit_properties json-editor-btntype-properties"><i class="icon icon-menu"></i><span> properties</span></button></span><div style="display: none;"></div><div class="je-panel"><div class="container je-noindent"><div><div class="columns"><div class="column je-object__container col-12" data-schematype="object" data-schemapath="root.location"><h4 style="display: inline-block;" class="je-object__title"><button type="button" title="Collapse" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-collapse json-editor-btntype-toggle"><i class="icon icon-arrow-down"></i><span> </span></button><label>Location</label></h4><span class="btn-group je-object__controls"><div style="display: none;" class="je-modal"><textarea class="form-input je-edit-json--textarea"></textarea><button type="button" title="Save" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-save json-editor-btntype-save"><i class="icon icon-check"></i><span> Save</span></button><button type="button" title="Copy" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-copy json-editor-btntype-copy"><i class="icon icon-copy"></i><span> Copy</span></button><button type="button" title="Cancel" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-cancel json-editor-btntype-cancel"><i class="icon icon-cross"></i><span> Cancel</span></button></div><div style="display: none;" class="je-modal"><div class="property-selector"><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;city</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;state</label></div><div class="form-group checkbox" style="margin-top: 0px; padding-top: 0px; margin-bottom: 0px; padding-bottom: 0px; height: auto;"><label class="form-checkbox pr-0"><input type="checkbox" style="width: auto;" checked="checked"><i class="form-icon"></i>&nbsp;citystate</label></div></div><input type="text" class="form-input property-selector-input" placeholder="Property name..."><button type="button" title="Add" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-add json-editor-btntype-add"><i class="icon icon-plus"></i><span> Add</span></button><div style="clear: both;"></div></div><button type="button" title="Edit JSON" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-edit json-editor-btntype-editjson"><i class="icon icon-edit"></i><span> JSON</span></button><button type="button" title="Object Properties" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-edit_properties json-editor-btntype-properties"><i class="icon icon-menu"></i><span> properties</span></button></span><div style="display: none;"></div><div class="je-panel"><div class="container je-noindent"><div><div class="columns"><div class="column col-12" data-schematype="string" data-schemapath="root.location.city"><div class="form-group"><label class="je-label form-label">city</label><input type="text" class="form-input" name="root[location][city]" aria-label="root[location][city]" value="San Francisco"></div><div></div></div></div><div class="columns"><div class="column col-12" data-schematype="string" data-schemapath="root.location.state"><div class="form-group"><label class="je-label form-label">state</label><input type="text" class="form-input" name="root[location][state]" aria-label="root[location][state]" value="California"></div><div></div></div></div></div></div></div><div></div></div></div><div class="columns"><div class="column col-12" data-schematype="array" data-schemapath="root.pets"><h4 style="display: inline-block;"><button type="button" title="Collapse" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-collapse json-editor-btntype-toggle"><i class="icon icon-arrow-down"></i><span> </span></button><label>Pets</label><span class="btn-group"></span></h4><div class="je-panel"><div style="display: none;"></div><table class="table table-scroll" style=""><thead><tr><th>type</th><th>name</th><th>spayed / neutered</th><th aria-hidden="true" style=""> </th></tr></thead><tbody><tr data-schematype="object" data-schemapath="root.pets.0"><td data-schematype="string" data-schemapath="root.pets.0.type" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][0][type]"><option value="undefined"> </option><option value="cat">cat</option><option value="dog" selected="selected">dog</option><option value="bird">bird</option><option value="reptile">reptile</option><option value="other">other</option></select></div><div></div></td><td data-schematype="string" data-schemapath="root.pets.0.name" class="compact"><div class="form-group" style="margin-bottom: 0px;"><input type="text" class="form-input" name="root[pets][0][name]" aria-label="root[pets][0][name]" value="Spot"></div><div></div></td><td data-schematype="boolean" data-schemapath="root.pets.0.fixed" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][0][fixed]"><option value="undefined"> </option><option value="1" selected="selected">true</option><option value="">false</option></select></div><div></div></td><td><span class="btn-group" style="margin: 0px; padding: 0px;"><button type="button" title="Delete" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-delete delete json-editor-btntype-delete" data-i="0"><i class="icon icon-delete"></i><span> </span></button><button type="button" title="Move up" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-moveup moveup json-editor-btntype-move" data-i="0" style="display: none;"><i class="icon icon-upward"></i><span> </span></button><button type="button" title="Move down" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-movedown movedown json-editor-btntype-move" data-i="0"><i class="icon icon-downward"></i><span> </span></button></span></td></tr><tr data-schematype="object" data-schemapath="root.pets.1"><td data-schematype="string" data-schemapath="root.pets.1.type" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][1][type]"><option value="undefined"> </option><option value="cat" selected="selected">cat</option><option value="dog">dog</option><option value="bird">bird</option><option value="reptile">reptile</option><option value="other">other</option></select></div><div></div></td><td data-schematype="string" data-schemapath="root.pets.1.name" class="compact"><div class="form-group" style="margin-bottom: 0px;"><input type="text" class="form-input" name="root[pets][1][name]" aria-label="root[pets][1][name]" value="Whiskers"></div><div></div></td><td data-schematype="boolean" data-schemapath="root.pets.1.fixed" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][1][fixed]"><option value="undefined"> </option><option value="1">true</option><option value="" selected="selected">false</option></select></div><div></div></td><td><span class="btn-group" style="margin: 0px; padding: 0px;"><button type="button" title="Delete" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-delete delete json-editor-btntype-delete" data-i="1"><i class="icon icon-delete"></i><span> </span></button><button type="button" title="Move up" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-moveup moveup json-editor-btntype-move" data-i="1"><i class="icon icon-upward"></i><span> </span></button><button type="button" title="Move down" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-movedown movedown json-editor-btntype-move" data-i="1" style=""><i class="icon icon-downward"></i><span> </span></button></span></td></tr><tr data-schematype="object" data-schemapath="root.pets.2"><td data-schematype="string" data-schemapath="root.pets.2.type" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][2][type]"><option value="undefined"> </option><option value="cat">cat</option><option value="dog" selected="selected">dog</option><option value="bird">bird</option><option value="reptile">reptile</option><option value="other">other</option></select></div><div></div></td><td data-schematype="string" data-schemapath="root.pets.2.name" class="compact"><div class="form-group" style="margin-bottom: 0px;"><input type="text" class="form-input" name="root[pets][2][name]" aria-label="root[pets][2][name]"></div><div></div></td><td data-schematype="boolean" data-schemapath="root.pets.2.fixed" class="compact"><div class="form-group" style="margin-bottom: 0px;"><select class="form-select" name="root[pets][2][fixed]"><option value="undefined"> </option><option value="1">true</option><option value="" selected="selected">false</option></select></div><div></div></td><td><span class="btn-group" style="margin: 0px; padding: 0px;"><button type="button" title="Delete" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-delete delete json-editor-btntype-delete" data-i="2"><i class="icon icon-delete"></i><span> </span></button><button type="button" title="Move up" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-moveup moveup json-editor-btntype-move" data-i="2"><i class="icon icon-upward"></i><span> </span></button><button type="button" title="Move down" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-movedown movedown json-editor-btntype-move" data-i="2" style="display: none;"><i class="icon icon-downward"></i><span> </span></button></span></td></tr></tbody></table><span class="btn-group"><button type="button" title="Add row" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-add json-editor-btntype-add"><i class="icon icon-plus"></i><span> row</span></button><button type="button" title="Delete Last row" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-subtract json-editor-btntype-deletelast" style=""><i class="icon icon-minus"></i><span> Last row</span></button><button type="button" title="Delete All" class="btn btn-sm btn-primary mr-2 my-1 json-editor-btn-delete json-editor-btntype-deleteall" style=""><i class="icon icon-delete"></i><span> All</span></button></span></div><div></div></div></div><div class="columns"><div class="column col-6" data-schematype="string" data-schemapath="root.name"><div class="form-group"><label class="je-label form-label">name</label><input type="text" class="form-input" pattern=".{4,}" name="root[name]" aria-label="root[name]" value="John Smith"><div></div><p class="je-desc hide-sm">First and Last name</p></div></div><div class="column col-3" data-schematype="integer" data-schemapath="root.age"><div class="form-group"><label class="je-label form-label">age</label><input type="text" class="form-input" min="18" max="99" name="root[age]" aria-label="root[age]" value="35"></div><div></div></div><div class="column col-3" data-schematype="string" data-schemapath="root.gender"><div class="form-group"><label class="je-label form-label">gender</label><select class="form-select" name="root[gender]"><option value="undefined"> </option><option value="male" selected="selected">male</option><option value="female">female</option><option value="other">other</option></select></div><div></div></div></div></div></div></div><div></div></div></div>
+      </div>
+    </div>
+    
+    <script>
+      // This is the starting value for the editor
+      // We will use this to seed the initial editor 
+      // and to provide a "Restore to Default" button.
+      var starting_value = {
+        name: "John Smith",
+        age: 35,
+        gender: "male",
+        location: {
+          city: "San Francisco",
+          state: "California"
+        },
+        pets: [
+          {
+            name: "Spot",
+            type: "dog",
+            fixed: true
+          },
+          {
+            name: "Whiskers",
+            type: "cat",
+            fixed: false
+          }
+        ]
+      };
+      
+      // Initialize the editor
+      var editor = new JSONEditor(document.getElementById('editor_holder'),{
+        // Enable fetching schemas via ajax
+        ajax: true,
+        
+        // The schema for the editor
+        schema: {
+          $ref: "person.json",
+          format: "grid"
+        },
+        
+        // Seed the form with a starting value
+        startval: starting_value
+      });
+      
+      // Hook up the submit button to log to the console
+      document.getElementById('submit').addEventListener('click',function() {
+        // Get the value from the editor
+        console.log(editor.getValue());
+      });
+      
+      // Hook up the Restore to Default button
+      document.getElementById('restore').addEventListener('click',function() {
+        editor.setValue(starting_value);
+      });
+      
+      // Hook up the validation indicator to update its 
+      // status whenever the editor changes
+      editor.on('change',function() {
+        // Get an array of errors from the validator
+        var errors = editor.validate();
+        
+        var indicator = document.getElementById('valid_indicator');
+        
+        // Not valid
+        if(errors.length) {
+          indicator.className = 'label alert';
+          indicator.textContent = 'not valid';
+        }
+        // Valid
+        else {
+          indicator.className = 'label success';
+          indicator.textContent = 'valid';
+        }
+      });
+    </script>
+  
+
+</body></html>
