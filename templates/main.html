@@ -862,7 +862,7 @@ styles.join("\n")
 
         editor.on('ready',() => {
         // Now the api methods will be available
-          editor.setValue(JSON.parse({{.Data}}));
+          editor.setValue(JSON.parse('{{.Data}}'));
         });
 
     </script>

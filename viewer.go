@@ -62,21 +62,10 @@ func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item any) {
 type ViewData struct {
 	Name   string
 	Schema template.JS
-	Data   string
+	Data   template.JS
 }
 
 func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
-	//templates, err := template.ParseGlob("./templates/*")
-	//if err != nil {
-	//log.Printf("Problem parsing template glob: %v", err)
-	//return
-	//}
-	//vd := ViewData{Name: "Test"}
-	//err = templates.ExecuteTemplate(w, "main.html", vd)
-	//if err != nil {
-	//log.Printf("problem with template. %v", err)
-	//}
-
 	var err error
 
 	i := *item.(*any)
@@ -85,11 +74,8 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
 	if err != nil {
 		log.Printf("problem jsonifying: %v", err)
 	}
-	//w.Header().Set("content-type", "application/json")
-	//w.Write(d)
 
-	//templates, err := template.ParseGlob("./templates/*")
-	templates, err := template.ParseFS(templateEmbededFS, "*")
+	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
 	if err != nil {
 		log.Printf("Problem parsing template glob: %v", err)
 		return
@@ -97,7 +83,7 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
 	s := jsonschema.Document{}
 	s.Read(i)
 	sb, _ := s.Marshal()
-	vd := ViewData{Name: "Test", Schema: template.JS(sb), Data: string(d)}
+	vd := ViewData{Name: "Test", Schema: template.JS(sb), Data: template.JS(d)}
 	err = templates.ExecuteTemplate(w, "main.html", vd)
 	if err != nil {
 		log.Printf("problem with template. %v", err)
@@ -153,7 +139,7 @@ func (v *Viewer) ResolvePath(fullpath string) (any, error) {
 
 }
 
-var static_server = http.StripPrefix("/static/", http.FileServer(http.Dir("static")))
+var static_server = http.StripPrefix("/", http.FileServer(http.FS(staticEmbededFS)))
 
 func (v *Viewer) ServeStatic(w http.ResponseWriter, r *http.Request) {
 	static_server.ServeHTTP(w, r)
