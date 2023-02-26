@@ -1,11 +1,48 @@
-package main
+package gowebstructapi
 
 import (
 	"encoding/json"
 	"log"
 	"reflect"
 	"testing"
+	"time"
 )
+
+type Config struct {
+	Thing1a testResolveSubStr
+	Thing1b testResolveSubStr
+}
+
+var config Config
+
+type Options1 int
+
+func (o Options1) Enumerate() map[string]any {
+	return map[string]any{
+		"unknown": 0,
+		"a":       1,
+		"b":       2,
+		"c":       3,
+	}
+}
+
+type testResolveSubStr2 struct {
+	Name   string
+	Length float32
+	OK     bool
+}
+
+type testResolveSubStr struct {
+	Name   string
+	Param1 int
+	Param2 float32
+	Param3 time.Time
+	Param4 time.Duration
+	Param5 bool
+	Param6 Options1
+	Param7 []int
+	Param8 []testResolveSubStr2
+}
 
 func TestResolve(t *testing.T) {
 	var c Config
@@ -15,7 +52,7 @@ func TestResolve(t *testing.T) {
 
 	//var c2 Config
 	//c2.Thing1a.Name = "abcd"
-	var c2 ConfigType1
+	var c2 testResolveSubStr
 	c2.Name = "abcd"
 
 	//v := Viewer{Root: c}

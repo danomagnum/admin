@@ -1,4 +1,4 @@
-module gowebstructapi
+module github.com/danomagnum/gowebstructapi
 
 go 1.19
 

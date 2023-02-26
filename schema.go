@@ -1,4 +1,4 @@
-package main
+package gowebstructapi
 
 type schemaEndpoint struct {
 	Type    string // can be object, array, string, integer

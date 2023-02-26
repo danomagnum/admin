@@ -1,4 +1,4 @@
-package main
+package gowebstructapi
 
 import (
 	"encoding/json"
