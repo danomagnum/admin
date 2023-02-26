@@ -88,7 +88,8 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
 	//w.Header().Set("content-type", "application/json")
 	//w.Write(d)
 
-	templates, err := template.ParseGlob("./templates/*")
+	//templates, err := template.ParseGlob("./templates/*")
+	templates, err := template.ParseFS(templateEmbededFS, "*")
 	if err != nil {
 		log.Printf("Problem parsing template glob: %v", err)
 		return
