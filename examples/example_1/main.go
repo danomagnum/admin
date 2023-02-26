@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/danomagnum/gowebstructapi"
 )
 
 func main() {
@@ -13,7 +15,7 @@ func main() {
 	var config Config
 	config.Thing1a.Name = "init"
 
-	v := Viewer{Root: config}
+	v := gowebstructapi.Viewer{Root: config}
 
 	log.Print("starting up...")
 	http.ListenAndServe("localhost:8000", &v)
