@@ -43,7 +43,7 @@ func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		// updating
-		v.Edit(w, r, item)
+		v.Edit(w, r, &item)
 	case "GET":
 		// just viewing
 		// we don't need to do anything special here.
@@ -51,12 +51,12 @@ func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v.View(w, r, item)
 }
 
-func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item any) {
+func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item *any) {
 	jd := json.NewDecoder(r.Body)
-	i := *item.(*any)
-	log.Printf("PREPOST: %v", i)
-	jd.Decode(&i)
-	log.Printf("POST: %v", i)
+	//i := *item.(*any)
+	log.Printf("PREPOST: %v", item)
+	jd.Decode(item)
+	log.Printf("POST: %v", item)
 }
 
 type ViewData struct {
