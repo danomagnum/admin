@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -18,6 +19,14 @@ func main() {
 	v := gowebstructapi.Viewer{Root: config}
 
 	log.Print("starting up...")
+
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+			fmt.Printf("Struct: %+v\n", config)
+		}
+	}()
+
 	http.ListenAndServe("localhost:8000", &v)
 
 	select {}
