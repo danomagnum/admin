@@ -4,44 +4,7 @@
     <meta charset="utf-8">
     <title>Basic JSON Editor Example</title>
     <script src="/static/jsoneditor.min.js"></script>
-    <style id="error_marker.css">
-    .error_widget_wrapper {
-        background: inherit;
-        color: inherit;
-        border:none
-    }
-    .error_widget {
-        border-top: solid 2px;
-        border-bottom: solid 2px;
-        margin: 5px 0;
-        padding: 10px 40px;
-        white-space: pre-wrap;
-    }
-    .error_widget.ace_error, .error_widget_arrow.ace_error{
-        border-color: #ff5a5a
-    }
-    .error_widget.ace_warning, .error_widget_arrow.ace_warning{
-        border-color: #F1D817
-    }
-    .error_widget.ace_info, .error_widget_arrow.ace_info{
-        border-color: #5a5a5a
-    }
-    .error_widget.ace_ok, .error_widget_arrow.ace_ok{
-        border-color: #5aaa5a
-    }
-    .error_widget_arrow {
-        position: absolute;
-        border: solid 5px;
-        border-top-color: transparent!important;
-        border-right-color: transparent!important;
-        border-left-color: transparent!important;
-        top: -5px;
-    }
-
-/*# sourceURL=ace/css/error_marker.css */</style>
-
-    <!--<style src="/static/ace.css"></style>-->
-<script src="/static/ace.js"></script>
+ 
     <link rel="stylesheet" id="theme-link" href="/static/bootstrap.min.css">
     <link rel="stylesheet" id="iconlib-link" href="/static/spectre-icons.min.css">
     <style id="theme-bootstrap4"></style>
@@ -53,41 +16,17 @@
       <div class="row columns md:flex">
         <div class="col-8 col-md-8 w-8/12">
           <div id="editor_holder" data-theme="bootstrap4" class="je-ready">
+            <form target="/" method="POST">
+              {{.Form}}
+              <input type="submit"/>
+
+            </form>
           </div>
         </div>
       </div>
     </div>
-    <button id="submit">Submit (console.log)</button>
 
-    <script>
-      // Initialize the editor with a JSON schema
-      JSONEditor.defaults.options.theme = 'bootstrap5';
-      JSONEditor.defaults.options.iconlib = 'spectre';
-      JSONEditor.defaults.options.enable_array_copy = true;
-      JSONEditor.defaults.options.disable_edit_json = true;
-      JSONEditor.defaults.options.disable_properties = true;
-      JSONEditor.defaults.options.no_additional_properties = true;
-      JSONEditor.defaults.options.disable_collapse = true;
-      var editor = new JSONEditor(document.getElementById('editor_holder'),{
-        schema: {{.Schema}}
-      });
-
-      // Hook up the submit button to log to the console
-      document.getElementById('submit').addEventListener('click',function() {
-        // Get the value from the editor
-        console.log(editor.getValue());
-        let xhr = new XMLHttpRequest();
-        xhr.open("POST", ".", true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send( JSON.stringify(editor.getValue())) });
-
-
-        editor.on('ready',() => {
-        // Now the api methods will be available
-          editor.setValue(JSON.parse('{{.Data}}'));
-        });
-
-    </script>
+  
   
 
 </body></html>

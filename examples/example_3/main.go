@@ -19,28 +19,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			f := gowebstructapi.StructToForm(&config)
-			out_txt := fmt.Sprintf("<html><body><form action='/' method='post'>%s<input type='submit'></form></body></html>", f)
-			w.Header().Set("content-type", "text/html")
-			w.Write([]byte(out_txt))
-		case "POST":
-			//r.ParseForm()
-			//fmt.Printf("got %+v", r.Form)
-			new, err := gowebstructapi.RespToStruct[Config](r)
-			if err != nil {
-				log.Printf("got error %v\n", err)
-			}
-			log.Printf("got %+v", new)
-			config = *new
-			f := gowebstructapi.StructToForm(&config)
-			out_txt := fmt.Sprintf("<html><body><form action='/' method='post'>%s<input type='submit'></form></body></html>", f)
-			w.Header().Set("content-type", "text/html")
-			w.Write([]byte(out_txt))
-		}
-	})
+	v := gowebstructapi.NewAdmin()
+	v.Data["Test"] = &config
+
+	mux.Handle("/", v)
 
 	log.Print("starting up...")
 

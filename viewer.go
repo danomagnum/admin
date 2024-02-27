@@ -1,25 +1,28 @@
 package gowebstructapi
 
 import (
-	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"reflect"
-	"strconv"
 	"strings"
 
-	"github.com/danomagnum/go-jsonschema-generator"
+	"github.com/gorilla/schema"
+	"github.com/joncalhoun/form"
 )
 
-type Viewer struct {
-	Root any
+type Admin struct {
+	Data map[string]any
+}
+
+func NewAdmin() *Admin {
+	a := new(Admin)
+	a.Data = make(map[string]any)
+	return a
 }
 
 var static_suffixes = []string{"css", "js", "ico"}
 
-func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check for static data directory
 	if strings.HasPrefix(r.URL.Path, "/static/") {
 		v.ServeStatic(w, r)
@@ -43,7 +46,7 @@ func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		// updating
-		v.Edit(w, r, &item)
+		v.Edit(w, r, item)
 	case "GET":
 		// just viewing
 		// we don't need to do anything special here.
@@ -51,39 +54,49 @@ func (v *Viewer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	v.View(w, r, item)
 }
 
-func (v *Viewer) Edit(w http.ResponseWriter, r *http.Request, item *any) {
-	jd := json.NewDecoder(r.Body)
-	//i := *item.(*any)
-	log.Printf("PREPOST: %v", item)
-	jd.Decode(item)
-	log.Printf("POST: %v", item)
+var decoder = schema.NewDecoder()
+
+func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
+
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("problem parsing form: %v", err)
+	}
+
+	// r.PostForm is a map of our POST form values
+	err = decoder.Decode(item, r.PostForm)
+	if err != nil {
+		log.Printf("problem decoding form: %v", err)
+	}
+
 }
 
 type ViewData struct {
-	Name   string
-	Schema template.JS
-	Data   template.JS
+	Name string
+	Form template.HTML
 }
 
-func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
+func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
 	var err error
 
-	i := *item.(*any)
-
-	d, err := json.Marshal(i)
-	if err != nil {
-		log.Printf("problem jsonifying: %v", err)
-	}
+	//i := *item.(*any)
 
 	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
 	if err != nil {
 		log.Printf("Problem parsing template glob: %v", err)
 		return
 	}
-	s := jsonschema.Document{}
-	s.Read(i)
-	sb, _ := s.Marshal()
-	vd := ViewData{Name: "Test", Schema: template.JS(sb), Data: template.JS(d)}
+
+	tpl := template.Must(template.New("").Parse(`
+   	 <input type='{{.Type}}' name='{{.Name}}' {{with .Value}}value='{{.}}'{{end}}>
+   `))
+	fb := form.Builder{InputTemplate: tpl}
+	html, err := fb.Inputs(item)
+	if err != nil {
+		log.Printf("problem creating form: %v", err)
+	}
+
+	vd := ViewData{Name: "Test", Form: html}
 	err = templates.ExecuteTemplate(w, "main.html", vd)
 	if err != nil {
 		log.Printf("problem with template. %v", err)
@@ -91,56 +104,14 @@ func (v *Viewer) View(w http.ResponseWriter, r *http.Request, item any) {
 }
 
 // traverse the path of struct fields, array indeces, and map keys to get to the final node we're working with.
-func (v *Viewer) ResolvePath(fullpath string) (any, error) {
-	path_parts := strings.Split(fullpath, "/")
+func (v *Admin) ResolvePath(fullpath string) (any, error) {
 
-	position := reflect.ValueOf(&v.Root).Elem()
-	current_path := ""
-
-	for _, path := range path_parts {
-		if path == "" {
-			continue
-		}
-		// TODO: check for arrays also.
-		switch position.Kind() {
-		case reflect.Struct:
-			position = position.FieldByName(path)
-		case reflect.Map:
-			keytype := position.Type().Key()
-			switch keytype.Kind() {
-			case reflect.String:
-				position = position.MapIndex(reflect.ValueOf(path))
-			case reflect.Int:
-				map_index, err := strconv.Atoi(path)
-				if err != nil {
-					return &reflect.Value{}, fmt.Errorf("path %s is not a valid map index", path)
-				}
-				position = position.MapIndex(reflect.ValueOf(map_index))
-			default:
-				return &reflect.Value{}, fmt.Errorf("map key type %s is not supported", keytype)
-			}
-		case reflect.Array, reflect.Slice:
-			path_index, err := strconv.Atoi(path)
-			if err != nil {
-				return &reflect.Value{}, fmt.Errorf("path %s is not a valid array index", path)
-			}
-			if path_index >= position.Len() || path_index < 0 {
-				return &reflect.Value{}, fmt.Errorf("index %d is out of bounds (expect 0..%d)", path_index, position.Len())
-			}
-			position = position.Index(path_index)
-		default:
-			return &reflect.Value{}, fmt.Errorf("path %s is not a struct. Cannot lookup %s from non-struct", current_path, path)
-		}
-	}
-
-	log.Printf("can addr: %v", position.CanAddr())
-
-	return position.Addr().Interface(), nil
+	return v.Data["Test"], nil
 
 }
 
 var static_server = http.StripPrefix("/", http.FileServer(http.FS(staticEmbededFS)))
 
-func (v *Viewer) ServeStatic(w http.ResponseWriter, r *http.Request) {
+func (v *Admin) ServeStatic(w http.ResponseWriter, r *http.Request) {
 	static_server.ServeHTTP(w, r)
 }

@@ -16,7 +16,7 @@ func main() {
 	var config Config
 	config.Thing1a.Name = "init"
 
-	v := gowebstructapi.Viewer{Root: config}
+	v := gowebstructapi.Admin{Root: config}
 
 	log.Print("starting up...")
 
