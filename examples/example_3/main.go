@@ -40,8 +40,8 @@ func main() {
 }
 
 type Config struct {
-	Item1 string
+	Item1 string `descr:"This is a description"`
 	Item2 int
 	Item3 float32
-	Item4 bool
+	Item4 bool `descr:"I have a description too!"`
 }

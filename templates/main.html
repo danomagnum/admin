@@ -7,17 +7,17 @@
  
     <link rel="stylesheet" id="theme-link" href="/static/bootstrap.min.css">
     <link rel="stylesheet" id="iconlib-link" href="/static/spectre-icons.min.css">
+    <link rel="stylesheet" id="iconlib-link" href="/static/mvp.css">
     <style id="theme-bootstrap4"></style>
   <style id="theme-default"></style><style id="theme-html"></style></head>
   <body>
-    <h1>Basic JSON Editor Example</h1>
-
     <div class="container grid-xl">
       <div class="row columns md:flex">
         <div class="col-8 col-md-8 w-8/12">
           <div id="editor_holder" data-theme="bootstrap4" class="je-ready">
             <form target="/" method="POST">
               {{.Form}}
+              <br>
               <input type="submit"/>
 
             </form>

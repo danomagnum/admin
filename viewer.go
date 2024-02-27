@@ -79,8 +79,6 @@ type ViewData struct {
 func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
 	var err error
 
-	//i := *item.(*any)
-
 	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
 	if err != nil {
 		log.Printf("Problem parsing template glob: %v", err)
@@ -95,6 +93,9 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
 	if err != nil {
 		log.Printf("problem creating form: %v", err)
 	}
+	_ = html
+
+	html = StructToForm(item)
 
 	vd := ViewData{Name: "Test", Form: html}
 	err = templates.ExecuteTemplate(w, "main.html", vd)

@@ -2,6 +2,7 @@ package gowebstructapi
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 type FieldDescriptor struct {
 	Name  string
+	Descr string
 	Value any
 	Kind  reflect.Kind
 }
@@ -22,18 +24,23 @@ func GetNameToFieldMap(model any) []FieldDescriptor {
 		name := t.Field(i).Name
 		typ := t.Field(i).Type.Kind()
 		structValue := reflect.Indirect(v).FieldByName(name)
-		nameToDataPointerMap[i] = FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ}
+		descr := t.Field(i).Tag.Get("descr")
+		nameToDataPointerMap[i] = FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ, Descr: descr}
 	}
 	return nameToDataPointerMap
 }
 
-func StructToForm(model any) string {
+func StructToForm(model any) template.HTML {
 	m := GetNameToFieldMap(model)
 
 	s := strings.Builder{}
 	for _, v := range m {
+		s.WriteString(fmt.Sprintf("<label for='%s' title='%s'>%s</label>", v.Name, v.Descr, v.Name))
 		switch x := v.Value.(type) {
 		case bool:
+			// checkboxes don't send their values on form updates if they're not checked.  So gorilla/schema
+			// will not update them to false.  This hidden field takes care of that.
+			s.WriteString(fmt.Sprintf("<input type='hidden' name='%s' value='false'>\n", v.Name))
 			if x {
 				s.WriteString(fmt.Sprintf("<input type='checkbox' name='%s' checked>\n", v.Name))
 			} else {
@@ -47,7 +54,7 @@ func StructToForm(model any) string {
 
 	}
 
-	return s.String()
+	return template.HTML(s.String())
 
 }
 
