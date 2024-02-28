@@ -1,4 +1,4 @@
-package gowebstructapi
+package admin
 
 import (
 	"fmt"
@@ -19,13 +19,16 @@ type FieldDescriptor struct {
 func GetNameToFieldMap(model any) []FieldDescriptor {
 	t := reflect.TypeOf(model).Elem()
 	v := reflect.ValueOf(model).Elem()
-	nameToDataPointerMap := make([]FieldDescriptor, v.NumField())
-	for i := range nameToDataPointerMap {
+	nameToDataPointerMap := make([]FieldDescriptor, 0, v.NumField())
+	for i := range v.NumField() {
+		if !t.Field(i).IsExported() {
+			continue
+		}
 		name := t.Field(i).Name
 		typ := t.Field(i).Type.Kind()
 		structValue := reflect.Indirect(v).FieldByName(name)
 		descr := t.Field(i).Tag.Get("descr")
-		nameToDataPointerMap[i] = FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ, Descr: descr}
+		nameToDataPointerMap = append(nameToDataPointerMap, FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ, Descr: descr})
 	}
 	return nameToDataPointerMap
 }

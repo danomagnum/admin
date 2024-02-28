@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/danomagnum/gowebstructapi"
+	"github.com/danomagnum/admin"
 )
 
 func main() {
@@ -22,20 +22,20 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			f := gowebstructapi.StructToForm(&config)
+			f := admin.StructToForm(&config)
 			out_txt := fmt.Sprintf("<html><body><form action='/' method='post'>%s<input type='submit'></form></body></html>", f)
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte(out_txt))
 		case "POST":
 			//r.ParseForm()
 			//fmt.Printf("got %+v", r.Form)
-			new, err := gowebstructapi.RespToStruct[Config](r)
+			new, err := admin.RespToStruct[Config](r)
 			if err != nil {
 				log.Printf("got error %v\n", err)
 			}
 			log.Printf("got %+v", new)
 			config = *new
-			f := gowebstructapi.StructToForm(&config)
+			f := admin.StructToForm(&config)
 			out_txt := fmt.Sprintf("<html><body><form action='/' method='post'>%s<input type='submit'></form></body></html>", f)
 			w.Header().Set("content-type", "text/html")
 			w.Write([]byte(out_txt))

@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/danomagnum/gowebstructapi"
+	"github.com/danomagnum/admin"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	var config Config
 	config.Thing1a.Name = "init"
 
-	v := gowebstructapi.Admin{Root: config}
+	v := admin.Admin{Root: config}
 
 	log.Print("starting up...")
 

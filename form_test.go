@@ -1,4 +1,4 @@
-package gowebstructapi
+package admin
 
 import (
 	"fmt"
