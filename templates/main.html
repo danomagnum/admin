@@ -16,19 +16,26 @@
           <ul>
             {{$prefix := .Prefix}}
             {{range .Structs}}
-            <li><a href="{{$prefix}}/{{.}}">{{.}}</a></li>
+            <li><a href="{{$prefix}}/edit/{{.}}">{{.}}</a></li>
             {{end}}
           </ul>
 
         </div>
         <div class="col-8 col-md-8 w-8/12">
           <div id="editor_holder" data-theme="bootstrap4" class="je-ready">
-            <form target="/" method="POST">
+            {{ if .Form}}
+            <form  method="POST">
               {{.Form}}
               <br>
-              <input type="submit"/>
-
+              <input type="submit" value="Save"/>
             </form>
+            {{ end }}
+            {{ if .Deleteable }}
+            <form action="{{$prefix}}/delete/{{.Name}}" method="Post" 
+               onSubmit="return confirm('Are you sure you want to delete this?  No going back.')">
+              <input type="submit" value="Delete"/>
+            </form>
+            {{ end }}
           </div>
         </div>
       </div>

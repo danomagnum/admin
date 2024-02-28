@@ -69,6 +69,10 @@ func (c *Config2) Changed() {
 	log.Printf("I was changed!!! %+v", *c)
 }
 
+func (c *Config2) Delete() {
+	log.Printf("I was baleeted!!! %+v", *c)
+}
+
 type Config3 struct {
 	Name  string
 	Value int

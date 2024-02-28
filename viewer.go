@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/schema"
@@ -31,6 +30,11 @@ var static_suffixes = []string{"css", "js", "ico"}
 func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	urlPath := strings.TrimPrefix(r.URL.Path, v.Prefix)
 
+	if urlPath == "/" {
+		v.Home(w, r)
+		return
+	}
+
 	// check for static data directory
 	if strings.HasPrefix(urlPath, "/static/") {
 		r.URL.Path = urlPath
@@ -46,21 +50,48 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// lookup actual item in config
-	item, err := v.ResolvePath(urlPath)
-	if err != nil {
-		log.Printf("problem resolving path: %v", err)
-		return
+	if strings.HasPrefix(urlPath, "/edit/") {
+		// lookup actual item in config
+		urlPath = strings.TrimPrefix(urlPath, "/edit/")
+		item, key, err := v.ResolvePath(urlPath)
+		if err != nil {
+			log.Printf("problem resolving path: %v", err)
+			return
+		}
+		switch r.Method {
+		case "POST":
+			// updating
+			v.Edit(w, r, item)
+		case "GET":
+			// just viewing
+			// we don't need to do anything special here.
+		}
+		v.View(w, r, key, item)
 	}
-	switch r.Method {
-	case "POST":
-		// updating
-		v.Edit(w, r, item)
-	case "GET":
-		// just viewing
-		// we don't need to do anything special here.
+
+	if strings.HasPrefix(urlPath, "/delete/") {
+		// lookup actual item in config
+		urlPath = strings.TrimPrefix(urlPath, "/delete/")
+		item, key, err := v.ResolvePath(urlPath)
+		if err != nil {
+			log.Printf("problem resolving path: %v", err)
+			return
+		}
+		switch r.Method {
+		case "POST":
+			// updating
+			if d, ok := item.(Deleteable); ok {
+				v.UnRegisterStruct(key)
+				d.Delete()
+				http.Redirect(w, r, v.Prefix, http.StatusSeeOther)
+			}
+		case "GET":
+			// just viewing
+			// we don't need to do anything special here.
+			v.View(w, r, key, item)
+		}
 	}
-	v.View(w, r, item)
+
 }
 
 var decoder = schema.NewDecoder()
@@ -80,6 +111,11 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 			log.Printf("problem decoding form: %v", err)
 		}
 		customchange.Change(newitem)
+
+		if n, ok := item.(Notifyable); ok {
+			n.Changed()
+		}
+
 		return
 	}
 
@@ -89,21 +125,21 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 		log.Printf("problem decoding form: %v", err)
 	}
 
-	n, ok := item.(Notifyable)
-	if ok {
+	if n, ok := item.(Notifyable); ok {
 		n.Changed()
 	}
 
 }
 
 type ViewData struct {
-	Name    string
-	Form    template.HTML
-	Prefix  string
-	Structs []string
+	Name       string
+	Form       template.HTML
+	Prefix     string
+	Deleteable bool
+	Structs    []string
 }
 
-func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
+func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item any) {
 	var err error
 
 	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
@@ -119,7 +155,11 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
 		itms = append(itms, k)
 	}
 	slices.Sort(itms)
-	vd := ViewData{Name: "Test", Form: html, Structs: itms, Prefix: v.Prefix}
+	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix}
+	if _, ok := item.(Deleteable); ok {
+		vd.Deleteable = true
+	}
+
 	err = templates.ExecuteTemplate(w, "main.html", vd)
 	if err != nil {
 		log.Printf("problem with template. %v", err)
@@ -127,7 +167,7 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, item any) {
 }
 
 // traverse the path of struct fields, array indeces, and map keys to get to the final node we're working with.
-func (v *Admin) ResolvePath(fullpath string) (any, error) {
+func (v *Admin) ResolvePath(fullpath string) (any, string, error) {
 
 	fullpath = strings.TrimLeft(fullpath, "/")
 
@@ -135,36 +175,13 @@ func (v *Admin) ResolvePath(fullpath string) (any, error) {
 	switch len(parts) {
 	case 1:
 		// this should be a direct key access.
-		itm_any, ok := v.Structs[fullpath]
-		if !ok {
-			return nil, fmt.Errorf("key %s not found", fullpath)
-		}
-		_, ok = itm_any.([]any)
-		if ok {
-			return nil, fmt.Errorf("key %s is a list so we need an index", fullpath)
-		}
-		return itm_any, nil
-	case 2:
-		// this should be an indexed key access
 		itm_any, ok := v.Structs[parts[0]]
 		if !ok {
-			return nil, fmt.Errorf("key %s not found", fullpath)
+			return nil, "", fmt.Errorf("key %s not found", parts[0])
 		}
-		itm_lst, ok := itm_any.([]any)
-		if !ok {
-			return nil, fmt.Errorf("key %s is not a list so we need an index", fullpath)
-		}
-		idx, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return nil, fmt.Errorf("index %s could not be parsed: %v", parts[1], err)
-		}
-		if idx < 0 || idx >= len(itm_lst) {
-			return nil, fmt.Errorf("index %d is out of bounds", idx)
-		}
-		return itm_lst[idx], nil
-
+		return itm_any, parts[0], nil
 	default:
-		return nil, fmt.Errorf("bad number of path parts: %d", len(parts))
+		return nil, "", fmt.Errorf("bad number of path parts: %d", len(parts))
 	}
 }
 
@@ -174,7 +191,14 @@ func (v *Admin) ServeStatic(w http.ResponseWriter, r *http.Request) {
 	static_server.ServeHTTP(w, r)
 }
 
-// Add an item to the admin page.
+// Add a struct to the admin page.
+// val should be a pointer to a struct instance
+//
+// Once registered, the struct will have a link on the admin
+// page to edit all its public properties.
+//
+// If the struct implements one of the advanced interfaces,
+// additional functionality can be used.
 func (v *Admin) RegisterStruct(key string, val any) {
 	v.Structs[key] = val
 }
@@ -192,4 +216,25 @@ func (v *Admin) RegisterFunc(key string, f func()) {
 // Remove an item from the admin page.
 func (v *Admin) UnRegisterFunc(key string) {
 	delete(v.Funcs, key)
+}
+
+func (v *Admin) Home(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
+	if err != nil {
+		log.Printf("Problem parsing template glob: %v", err)
+		return
+	}
+
+	itms := make([]string, 0, len(v.Structs))
+	for k := range v.Structs {
+		itms = append(itms, k)
+	}
+	vd := ViewData{Name: "Home", Form: "", Structs: itms, Prefix: v.Prefix}
+
+	err = templates.ExecuteTemplate(w, "main.html", vd)
+	if err != nil {
+		log.Printf("problem with template. %v", err)
+	}
 }
