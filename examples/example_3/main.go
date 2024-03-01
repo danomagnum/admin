@@ -32,6 +32,11 @@ func main() {
 	v.RegisterStruct("MultiTest3", &c2c)
 	v.RegisterStruct(c3.Name, &c3)
 
+	for i := range 100 {
+		c := Config3{Name: fmt.Sprintf("AutoGenStr%d", i), Value: i}
+		v.RegisterStruct(c.Name, &c)
+	}
+
 	v.RegisterFunc("New Config", func() {
 		v.RegisterStruct("New Config", &Config{})
 	})
@@ -39,7 +44,7 @@ func main() {
 		v.RegisterStruct("New Config2", &Config2{})
 	})
 	v.RegisterFunc("New Config3", func() {
-		v.RegisterStruct("New Config3", &Config3{})
+		v.RegisterStruct("New Config3", &Config3{Name: "New Config3"})
 	})
 
 	mux.Handle("/admin/", v)

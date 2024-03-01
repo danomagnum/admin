@@ -5,19 +5,22 @@
     <meta charset="utf-8">
     <title>Admin Site</title>
  
-    <link rel="stylesheet" id="theme-link" href="/admin/static/bootstrap.min.css">
-    <link rel="stylesheet" id="iconlib-link" href="/admin/static/spectre-icons.min.css">
-    <link rel="stylesheet" id="iconlib-link" href="/admin/static/mvp.css">
+    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/mvp.css">  -->
+    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/pico.min.css"> -->
+    <link rel="stylesheet" id="iconlib-link" href="/admin/static/simple.min.css">   
+    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/spectre.min.css">   -->
   <style id="theme-default"></style><style id="theme-html"></style></head>
   <body>
-    <div class="container grid-xl">
-      <div class="row columns md:flex">
-        <div class="col-4 col-md-4 w-4/8">
+    <article>
+      <aside>
+        <nav>
+          <h2>Structs</h2>
           <ul>
             {{range .Structs}}
             <li><a href="{{$prefix}}/edit/{{.}}">{{.}}</a></li>
             {{end}}
           </ul>
+          <h2>Functions</h2>
           <ul>
             {{range .Funcs}}
             <li>
@@ -27,10 +30,9 @@
             </li>
             {{end}}
           </ul>
-
-        </div>
-        <div class="col-8 col-md-8 w-8/12">
-          <div id="editor_holder" data-theme="bootstrap4" class="je-ready">
+        </nav>
+      </aside>
+      <main>
             {{ if .Form}}
             <form  method="POST">
               {{.Form}}
@@ -44,12 +46,7 @@
               <input type="submit" value="🗑 Delete"/>
             </form>
             {{ end }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-  
-  
+      </main>
+    </article>
 
 </body></html>
