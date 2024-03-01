@@ -21,6 +21,7 @@ type Admin struct {
 func NewAdmin() *Admin {
 	a := new(Admin)
 	a.Structs = make(map[string]any)
+	a.Funcs = make(map[string]func())
 	a.Prefix = "/admin"
 	return a
 }
@@ -53,7 +54,7 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(urlPath, "/edit/") {
 		// lookup actual item in config
 		urlPath = strings.TrimPrefix(urlPath, "/edit/")
-		item, key, err := v.ResolvePath(urlPath)
+		item, key, err := v.resolveStruct(urlPath)
 		if err != nil {
 			log.Printf("problem resolving path: %v", err)
 			return
@@ -69,10 +70,30 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		v.View(w, r, key, item)
 	}
 
+	if strings.HasPrefix(urlPath, "/call/") {
+		// lookup actual item in config
+		urlPath = strings.TrimPrefix(urlPath, "/call/")
+		f, _, err := v.resolveFunc(urlPath)
+		if err != nil {
+			log.Printf("problem resolving path: %v", err)
+			return
+		}
+		switch r.Method {
+		case "POST":
+			// updating
+			v.Call(w, r, f)
+		case "GET":
+			// just viewing
+			// we don't need to do anything special here.
+			v.Call(w, r, f)
+		}
+		v.Home(w, r)
+	}
+
 	if strings.HasPrefix(urlPath, "/delete/") {
 		// lookup actual item in config
 		urlPath = strings.TrimPrefix(urlPath, "/delete/")
-		item, key, err := v.ResolvePath(urlPath)
+		item, key, err := v.resolveStruct(urlPath)
 		if err != nil {
 			log.Printf("problem resolving path: %v", err)
 			return
@@ -82,7 +103,7 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// updating
 			if d, ok := item.(Deleteable); ok {
 				v.UnRegisterStruct(key)
-				d.Delete()
+				d.Delete(v)
 				http.Redirect(w, r, v.Prefix, http.StatusSeeOther)
 			}
 		case "GET":
@@ -95,6 +116,10 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var decoder = schema.NewDecoder()
+
+func (v *Admin) Call(w http.ResponseWriter, r *http.Request, item func()) {
+	item()
+}
 
 func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 
@@ -110,10 +135,10 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 		if err != nil {
 			log.Printf("problem decoding form: %v", err)
 		}
-		customchange.Change(newitem)
+		customchange.Change(v, newitem)
 
 		if n, ok := item.(Notifyable); ok {
-			n.Changed()
+			n.Changed(v)
 		}
 
 		return
@@ -126,7 +151,7 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 	}
 
 	if n, ok := item.(Notifyable); ok {
-		n.Changed()
+		n.Changed(v)
 	}
 
 }
@@ -137,6 +162,7 @@ type ViewData struct {
 	Prefix     string
 	Deleteable bool
 	Structs    []string
+	Funcs      []string
 }
 
 func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item any) {
@@ -155,7 +181,12 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item an
 		itms = append(itms, k)
 	}
 	slices.Sort(itms)
-	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix}
+	fs := make([]string, 0, len(v.Funcs))
+	for k := range v.Funcs {
+		fs = append(fs, k)
+	}
+	slices.Sort(fs)
+	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix, Funcs: fs}
 	if _, ok := item.(Deleteable); ok {
 		vd.Deleteable = true
 	}
@@ -167,7 +198,7 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item an
 }
 
 // traverse the path of struct fields, array indeces, and map keys to get to the final node we're working with.
-func (v *Admin) ResolvePath(fullpath string) (any, string, error) {
+func (v *Admin) resolveStruct(fullpath string) (any, string, error) {
 
 	fullpath = strings.TrimLeft(fullpath, "/")
 
@@ -176,6 +207,25 @@ func (v *Admin) ResolvePath(fullpath string) (any, string, error) {
 	case 1:
 		// this should be a direct key access.
 		itm_any, ok := v.Structs[parts[0]]
+		if !ok {
+			return nil, "", fmt.Errorf("key %s not found", parts[0])
+		}
+		return itm_any, parts[0], nil
+	default:
+		return nil, "", fmt.Errorf("bad number of path parts: %d", len(parts))
+	}
+}
+
+// traverse the path of struct fields, array indeces, and map keys to get to the final node we're working with.
+func (v *Admin) resolveFunc(fullpath string) (func(), string, error) {
+
+	fullpath = strings.TrimLeft(fullpath, "/")
+
+	parts := strings.Split(fullpath, "/")
+	switch len(parts) {
+	case 1:
+		// this should be a direct key access.
+		itm_any, ok := v.Funcs[parts[0]]
 		if !ok {
 			return nil, "", fmt.Errorf("key %s not found", parts[0])
 		}
@@ -231,7 +281,13 @@ func (v *Admin) Home(w http.ResponseWriter, r *http.Request) {
 	for k := range v.Structs {
 		itms = append(itms, k)
 	}
-	vd := ViewData{Name: "Home", Form: "", Structs: itms, Prefix: v.Prefix}
+	slices.Sort(itms)
+	fs := make([]string, 0, len(v.Funcs))
+	for k := range v.Funcs {
+		fs = append(fs, k)
+	}
+	slices.Sort(fs)
+	vd := ViewData{Name: "Home", Form: "", Structs: itms, Prefix: v.Prefix, Funcs: fs}
 
 	err = templates.ExecuteTemplate(w, "main.html", vd)
 	if err != nil {

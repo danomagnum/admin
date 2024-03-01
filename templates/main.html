@@ -1,3 +1,4 @@
+{{$prefix := .Prefix}}
 <!DOCTYPE html>
 <html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
@@ -7,16 +8,23 @@
     <link rel="stylesheet" id="theme-link" href="/admin/static/bootstrap.min.css">
     <link rel="stylesheet" id="iconlib-link" href="/admin/static/spectre-icons.min.css">
     <link rel="stylesheet" id="iconlib-link" href="/admin/static/mvp.css">
-    <style id="theme-bootstrap4"></style>
   <style id="theme-default"></style><style id="theme-html"></style></head>
   <body>
     <div class="container grid-xl">
       <div class="row columns md:flex">
         <div class="col-4 col-md-4 w-4/8">
           <ul>
-            {{$prefix := .Prefix}}
             {{range .Structs}}
             <li><a href="{{$prefix}}/edit/{{.}}">{{.}}</a></li>
+            {{end}}
+          </ul>
+          <ul>
+            {{range .Funcs}}
+            <li>
+              <form action="{{$prefix}}/call/{{.}}" method="Post">
+                <input type="Submit" value="{{.}}">
+              </form>
+            </li>
             {{end}}
           </ul>
 
@@ -33,7 +41,7 @@
             {{ if .Deleteable }}
             <form action="{{$prefix}}/delete/{{.Name}}" method="Post" 
                onSubmit="return confirm('Are you sure you want to delete this?  No going back.')">
-              <input type="submit" value="Delete"/>
+              <input type="submit" value="🗑 Delete"/>
             </form>
             {{ end }}
           </div>

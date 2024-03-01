@@ -30,9 +30,17 @@ func main() {
 	v.RegisterStruct("MultiTest1", &c2a)
 	v.RegisterStruct("MultiTest2", &c2b)
 	v.RegisterStruct("MultiTest3", &c2c)
-	c3.admin = v
 	v.RegisterStruct(c3.Name, &c3)
-	//v.Data["Test"] = &config
+
+	v.RegisterFunc("New Config", func() {
+		v.RegisterStruct("New Config", &Config{})
+	})
+	v.RegisterFunc("New Config2", func() {
+		v.RegisterStruct("New Config2", &Config2{})
+	})
+	v.RegisterFunc("New Config3", func() {
+		v.RegisterStruct("New Config3", &Config3{})
+	})
 
 	mux.Handle("/admin/", v)
 
@@ -65,28 +73,27 @@ type Config2 struct {
 	Item04 bool `descr:"I have a description too!"`
 }
 
-func (c *Config2) Changed() {
+func (c *Config2) Changed(a *admin.Admin) {
 	log.Printf("I was changed!!! %+v", *c)
 }
 
-func (c *Config2) Delete() {
+func (c *Config2) Delete(a *admin.Admin) {
 	log.Printf("I was baleeted!!! %+v", *c)
 }
 
 type Config3 struct {
 	Name  string
 	Value int
-	admin *admin.Admin
 }
 
-func (c *Config3) Change(v any) {
+func (c *Config3) Change(a *admin.Admin, v any) {
 	n, ok := v.(*Config3)
 	if !ok {
 		log.Printf("I should have been a Config3 but I wasn't!!  %T", v)
 	}
 	if c.Name != n.Name {
-		c.admin.UnRegisterStruct(c.Name)
-		c.admin.RegisterStruct(n.Name, c)
+		a.UnRegisterStruct(c.Name)
+		a.RegisterStruct(n.Name, c)
 		c.Name = n.Name
 		log.Printf("Name change from %s to %s ", c.Name, n.Name)
 	}
