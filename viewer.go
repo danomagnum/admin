@@ -8,21 +8,33 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gorilla/schema"
 )
 
 type Admin struct {
-	Structs map[string]any
-	Prefix  string
-	Funcs   map[string]func()
+	Structs  map[string]any
+	Prefix   string
+	Funcs    map[string]func()
+	timeBase time.Duration
+	decoder  *schema.Decoder
 }
 
-func NewAdmin() *Admin {
+func NewAdmin(options ...func(*Admin)) *Admin {
 	a := new(Admin)
 	a.Structs = make(map[string]any)
 	a.Funcs = make(map[string]func())
 	a.Prefix = "/admin"
+	for _, o := range options {
+		o(a)
+	}
+
+	a.decoder = schema.NewDecoder()
+	if a.timeBase != 0 {
+		a.decoder.RegisterConverter(time.Duration(0), durationConverter(a.timeBase))
+	}
+
 	return a
 }
 
@@ -115,8 +127,6 @@ func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-var decoder = schema.NewDecoder()
-
 func (v *Admin) Call(w http.ResponseWriter, r *http.Request, item func()) {
 	item()
 }
@@ -131,7 +141,7 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 	customchange, ok := item.(Changer)
 	if ok {
 		newitem := reflect.New(reflect.TypeOf(item).Elem()).Interface()
-		err = decoder.Decode(newitem, r.PostForm)
+		err = v.decoder.Decode(newitem, r.PostForm)
 		if err != nil {
 			log.Printf("problem decoding form: %v", err)
 		}
@@ -145,7 +155,7 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 	}
 
 	// r.PostForm is a map of our POST form values
-	err = decoder.Decode(item, r.PostForm)
+	err = v.decoder.Decode(item, r.PostForm)
 	if err != nil {
 		log.Printf("problem decoding form: %v", err)
 	}
@@ -174,7 +184,7 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item an
 		return
 	}
 
-	html := StructToForm(item)
+	html := StructToForm(item, v.timeBase)
 
 	itms := make([]string, 0, len(v.Structs))
 	for k := range v.Structs {

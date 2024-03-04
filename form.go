@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type FieldDescriptor struct {
@@ -33,7 +34,7 @@ func GetNameToFieldMap(model any) []FieldDescriptor {
 	return nameToDataPointerMap
 }
 
-func StructToForm(model any) template.HTML {
+func StructToForm(model any, timebase time.Duration) template.HTML {
 	m := GetNameToFieldMap(model)
 
 	s := strings.Builder{}
@@ -49,8 +50,14 @@ func StructToForm(model any) template.HTML {
 			} else {
 				s.WriteString(fmt.Sprintf("<input type='checkbox' name='%s'>\n", v.Name))
 			}
-		case int, string, byte, int16, uint16, int32, uint32, int64, uint64, float32, float64:
+		case string:
 			s.WriteString(fmt.Sprintf("<input type='text' name='%s' value='%v'>\n", v.Name, x))
+		case int, byte, int16, uint16, int32, uint32, int64, uint64, float32, float64:
+			s.WriteString(fmt.Sprintf("<input type='number' name='%s' value='%v'>\n", v.Name, x))
+		case time.Duration:
+			s.WriteString(fmt.Sprintf("<input type='number' name='%s' value='%d'>\n", v.Name, x/timebase))
+		case time.Time:
+			s.WriteString(fmt.Sprintf("<input type='datetime-local' name='%s' value='%v'>\n", v.Name, x))
 		default:
 			s.WriteString(fmt.Sprintf("!! Problem with %s (%T)", v.Name, x))
 		}

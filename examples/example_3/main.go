@@ -25,7 +25,7 @@ func main() {
 
 	c3 := Config3{Name: "MyName", Value: 42}
 
-	v := admin.NewAdmin()
+	v := admin.NewAdmin(admin.SetDurationTimebase(time.Millisecond))
 	v.RegisterStruct("Test", &config)
 	v.RegisterStruct("MultiTest1", &c2a)
 	v.RegisterStruct("MultiTest2", &c2b)
