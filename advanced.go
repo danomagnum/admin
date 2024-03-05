@@ -28,3 +28,7 @@ type Changer interface {
 type Deleteable interface {
 	Delete(*Admin)
 }
+
+type StatusIndicating interface {
+	Status() string
+}

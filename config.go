@@ -2,7 +2,9 @@ package admin
 
 import "time"
 
-func SetDurationTimebase(d time.Duration) func(*Admin) {
+type Option func(*Admin)
+
+func SetDurationTimebase(d time.Duration) Option {
 
 	return func(a *Admin) {
 		a.timeBase = d

@@ -173,6 +173,7 @@ type ViewData struct {
 	Deleteable bool
 	Structs    []string
 	Funcs      []string
+	Status     string
 }
 
 func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item any) {
@@ -196,7 +197,12 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item an
 		fs = append(fs, k)
 	}
 	slices.Sort(fs)
-	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix, Funcs: fs}
+	status := ""
+	sts_itm, ok := item.(StatusIndicating)
+	if ok {
+		status = sts_itm.Status()
+	}
+	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix, Funcs: fs, Status: status}
 	if _, ok := item.(Deleteable); ok {
 		vd.Deleteable = true
 	}

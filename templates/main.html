@@ -46,6 +46,10 @@
               <input type="submit" value="🗑 Delete"/>
             </form>
             {{ end }}
+
+            {{ if .Status}}
+              <p>{{.Status}}</p>
+            {{ end }}
       </main>
     </article>
 
