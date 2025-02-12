@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"slices"
@@ -15,9 +16,9 @@ import (
 
 type Admin struct {
 	Structs  map[string]any
-	Prefix   string
 	Funcs    map[string]func()
 	timeBase time.Duration
+	Prefix   string
 	decoder  *schema.Decoder
 }
 
@@ -25,7 +26,6 @@ func NewAdmin(options ...func(*Admin)) *Admin {
 	a := new(Admin)
 	a.Structs = make(map[string]any)
 	a.Funcs = make(map[string]func())
-	a.Prefix = "/admin"
 	for _, o := range options {
 		o(a)
 	}
@@ -38,102 +38,74 @@ func NewAdmin(options ...func(*Admin)) *Admin {
 	return a
 }
 
-var static_suffixes = []string{"css", "js", "ico"}
+func (v *Admin) Mux(prefix string) http.Handler {
+	v.Prefix = prefix
+	var static_server = http.StripPrefix("/", http.FileServer(http.FS(staticEmbededFS)))
 
-func (v *Admin) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	urlPath := strings.TrimPrefix(r.URL.Path, v.Prefix)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", v.Home)
+	mux.Handle("/static/", static_server)
+	mux.HandleFunc("POST /edit/{key}", v.edit)
+	mux.HandleFunc("GET /edit/{key}", v.view)
+	mux.HandleFunc("/call/{key}", v.call)
+	mux.HandleFunc("POST /delete/{key}", v.delete) // this should be DELETE probably, but browsers don't support it in a form natively without JS.
+	return http.StripPrefix(prefix, mux)
+}
 
-	if urlPath == "/" {
+func (v *Admin) delete(w http.ResponseWriter, r *http.Request) {
+	urlPath := r.PathValue("key")
+	if urlPath == "" {
+		slog.Warn("No key provided")
+		v.Home(w, r)
+		return
+	}
+	slog.Info("Got delete request", "alarmid", urlPath)
+	item, key, err := v.resolveStruct(urlPath)
+	if err != nil {
+		log.Printf("problem resolving path: %v", err)
+		return
+	}
+	v.UnRegisterStruct(key)
+	if d, ok := item.(Deleteable); ok {
+		d.AdminDelete(v)
+	}
+	http.Redirect(w, r, v.Prefix, http.StatusSeeOther)
+}
+
+func (v *Admin) call(w http.ResponseWriter, r *http.Request) {
+
+	urlPath := r.PathValue("key")
+	if urlPath == "" {
+		slog.Warn("No key provided")
+		v.Home(w, r)
+		return
+	}
+	f, _, err := v.resolveFunc(urlPath)
+	if err != nil {
+		log.Printf("problem resolving path: %v", err)
+		return
+	}
+	f()
+
+	v.Home(w, r)
+
+}
+
+func (v *Admin) edit(w http.ResponseWriter, r *http.Request) {
+
+	urlPath := r.PathValue("key")
+	if urlPath == "" {
+		slog.Warn("No key provided")
 		v.Home(w, r)
 		return
 	}
 
-	// check for static data directory
-	if strings.HasPrefix(urlPath, "/static/") {
-		r.URL.Path = urlPath
-		v.ServeStatic(w, r)
+	item, _, err := v.resolveStruct(urlPath)
+	if err != nil {
+		log.Printf("problem resolving path: %v", err)
 		return
 	}
-
-	// check for static data types also.
-	for _, sfx := range static_suffixes {
-		if strings.HasSuffix(urlPath, sfx) {
-			v.ServeStatic(w, r)
-			return
-		}
-	}
-
-	if strings.HasPrefix(urlPath, "/edit/") {
-		// lookup actual item in config
-		urlPath = strings.TrimPrefix(urlPath, "/edit/")
-		item, key, err := v.resolveStruct(urlPath)
-		if err != nil {
-			log.Printf("problem resolving path: %v", err)
-			return
-		}
-		switch r.Method {
-		case "POST":
-			// updating
-			v.Edit(w, r, item)
-		case "GET":
-			// just viewing
-			// we don't need to do anything special here.
-		}
-		v.View(w, r, key, item)
-	}
-
-	if strings.HasPrefix(urlPath, "/call/") {
-		// lookup actual item in config
-		urlPath = strings.TrimPrefix(urlPath, "/call/")
-		f, _, err := v.resolveFunc(urlPath)
-		if err != nil {
-			log.Printf("problem resolving path: %v", err)
-			return
-		}
-		switch r.Method {
-		case "POST":
-			// updating
-			v.Call(w, r, f)
-		case "GET":
-			// just viewing
-			// we don't need to do anything special here.
-			v.Call(w, r, f)
-		}
-		v.Home(w, r)
-	}
-
-	if strings.HasPrefix(urlPath, "/delete/") {
-		// lookup actual item in config
-		urlPath = strings.TrimPrefix(urlPath, "/delete/")
-		item, key, err := v.resolveStruct(urlPath)
-		if err != nil {
-			log.Printf("problem resolving path: %v", err)
-			return
-		}
-		switch r.Method {
-		case "POST":
-			// updating
-			if d, ok := item.(Deleteable); ok {
-				v.UnRegisterStruct(key)
-				d.Delete(v)
-				http.Redirect(w, r, v.Prefix, http.StatusSeeOther)
-			}
-		case "GET":
-			// just viewing
-			// we don't need to do anything special here.
-			v.View(w, r, key, item)
-		}
-	}
-
-}
-
-func (v *Admin) Call(w http.ResponseWriter, r *http.Request, item func()) {
-	item()
-}
-
-func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
-
-	err := r.ParseForm()
+	err = r.ParseForm()
 	if err != nil {
 		log.Printf("problem parsing form: %v", err)
 	}
@@ -145,12 +117,13 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 		if err != nil {
 			log.Printf("problem decoding form: %v", err)
 		}
-		customchange.Change(v, newitem)
+		customchange.AdminChange(v, newitem)
 
 		if n, ok := item.(Notifyable); ok {
-			n.Changed(v)
+			n.AdminChanged(v)
 		}
 
+		v.view(w, r)
 		return
 	}
 
@@ -161,23 +134,41 @@ func (v *Admin) Edit(w http.ResponseWriter, r *http.Request, item any) {
 	}
 
 	if n, ok := item.(Notifyable); ok {
-		n.Changed(v)
+		n.AdminChanged(v)
 	}
 
+	v.view(w, r)
+}
+
+type StructDescriptor struct {
+	Name    string
+	Display string
 }
 
 type ViewData struct {
 	Name       string
 	Form       template.HTML
-	Prefix     string
 	Deleteable bool
-	Structs    []string
+	Structs    []StructDescriptor
 	Funcs      []string
 	Status     string
+	Prefix     string
 }
 
-func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item any) {
-	var err error
+func (v *Admin) view(w http.ResponseWriter, r *http.Request) {
+
+	urlPath := r.PathValue("key")
+	if urlPath == "" {
+		slog.Warn("No key provided")
+		v.Home(w, r)
+		return
+	}
+
+	item, key, err := v.resolveStruct(urlPath)
+	if err != nil {
+		log.Printf("problem resolving path: %v", err)
+		return
+	}
 
 	templates, err := template.ParseFS(templateEmbededFS, "templates/*")
 	if err != nil {
@@ -187,27 +178,25 @@ func (v *Admin) View(w http.ResponseWriter, r *http.Request, key string, item an
 
 	html := StructToForm(item, v.timeBase)
 
-	itms := make([]string, 0, len(v.Structs))
-	for k := range v.Structs {
-		itms = append(itms, k)
-	}
-	slices.Sort(itms)
+	itms := make([]StructDescriptor, 0)
+	//slices.Sort(itms)
 	fs := make([]string, 0, len(v.Funcs))
 	for k := range v.Funcs {
 		fs = append(fs, k)
 	}
 	slices.Sort(fs)
+
 	status := ""
 	sts_itm, ok := item.(StatusIndicating)
 	if ok {
-		status = sts_itm.Status()
+		status = sts_itm.AdminStatus()
 	}
 	vd := ViewData{Name: key, Form: html, Structs: itms, Prefix: v.Prefix, Funcs: fs, Status: status}
 	if _, ok := item.(Deleteable); ok {
 		vd.Deleteable = true
 	}
 
-	err = templates.ExecuteTemplate(w, "main.html", vd)
+	err = templates.ExecuteTemplate(w, "view.html", vd)
 	if err != nil {
 		log.Printf("problem with template. %v", err)
 	}
@@ -251,12 +240,6 @@ func (v *Admin) resolveFunc(fullpath string) (func(), string, error) {
 	}
 }
 
-var static_server = http.StripPrefix("/", http.FileServer(http.FS(staticEmbededFS)))
-
-func (v *Admin) ServeStatic(w http.ResponseWriter, r *http.Request) {
-	static_server.ServeHTTP(w, r)
-}
-
 // Add a struct to the admin page.
 // val should be a pointer to a struct instance
 //
@@ -293,11 +276,27 @@ func (v *Admin) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itms := make([]string, 0, len(v.Structs))
+	itms := make([]StructDescriptor, 0, len(v.Structs))
 	for k := range v.Structs {
-		itms = append(itms, k)
+		desc := StructDescriptor{Name: k}
+		cd, ok := v.Structs[k].(CustomDisplay)
+		if ok {
+			desc.Display = cd.AdminDisplay()
+		} else {
+			desc.Display = k
+		}
+
+		itms = append(itms, desc)
 	}
-	slices.Sort(itms)
+	slices.SortFunc(itms, func(i, j StructDescriptor) int {
+		if i.Name == "New Alarm" {
+			return -1
+		}
+		if j.Name == "New Alarm" {
+			return 1
+		}
+		return strings.Compare(i.Name, j.Name)
+	})
 	fs := make([]string, 0, len(v.Funcs))
 	for k := range v.Funcs {
 		fs = append(fs, k)

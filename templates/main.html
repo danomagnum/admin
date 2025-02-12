@@ -5,21 +5,21 @@
     <meta charset="utf-8">
     <title>Admin Site</title>
  
-    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/mvp.css">  -->
-    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/pico.min.css"> -->
-    <link rel="stylesheet" id="iconlib-link" href="/admin/static/simple.min.css">   
-    <!-- <link rel="stylesheet" id="iconlib-link" href="/admin/static/spectre.min.css">   -->
+    <link rel="stylesheet" id="iconlib-link" href="{{$prefix}}/static/admin.css">   
   <style id="theme-default"></style><style id="theme-html"></style></head>
   <body>
+
     <article>
       <aside>
         <nav>
           <h2>Structs</h2>
-          <ul>
+          <input id="filter" placeholder="Search..."></input>
+          <ul id="filter_list">
             {{range .Structs}}
-            <li><a href="{{$prefix}}/edit/{{.}}">{{.}}</a></li>
+            <li><a href="{{$prefix}}/edit/{{.Name}}">{{.Display}}</a></li>
             {{end}}
           </ul>
+ 
           <h2>Functions</h2>
           <ul>
             {{range .Funcs}}
@@ -52,5 +52,25 @@
             {{ end }}
       </main>
     </article>
+
+    <script type="text/javascript">
+
+    function filter_list() {
+        let input = document.getElementById('filter');
+        let filter = input.value.toUpperCase();
+        let list = document.getElementById('filter_list');
+        let lis = list.getElementsByTagName('li')
+        for (let i = 0; i < lis.length; i++) {
+            let text = lis[i].children[0].innerHTML;
+            if (text.toUpperCase().indexOf(filter) >= 0) {
+                lis[i].style.display = 'list-item';
+            } else {
+                lis[i].style.display = 'none';
+            }
+        }
+    }
+    document.getElementById('filter').onkeyup = filter_list;
+    filter_list();
+    </script>
 
 </body></html>

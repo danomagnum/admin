@@ -1,0 +1,43 @@
+{{$prefix := .Prefix}}
+
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>Admin Site</title>
+ 
+    <link rel="stylesheet" id="iconlib-link" href="{{$prefix}}/static/admin.css">   
+  <style id="theme-default"></style><style id="theme-html"></style></head>
+  <body>
+
+
+    <article>
+      <main>
+            {{ if .Form}}
+            <div class="formbox">
+              <form  method="POST" id="editForm">
+                {{.Form}}
+                <br>
+              </form>
+              {{ end }}
+              {{ if .Deleteable }}
+              <form action="{{$prefix}}/delete/{{.Name}}" method="POST" 
+                onSubmit="return confirm('Are you sure you want to delete this?  No going back.')" id="deleteForm">
+              </form>
+            {{ end }}
+              <div class="buttonBox">
+                <input type="submit" value="🖫 Save" form="editForm"/>
+                {{ if .Deleteable}}
+                  <input type="submit" value="🗑 Delete" form="deleteForm"/>
+                {{ end }}
+                <button onclick="window.location.href='{{$prefix}}/'">🗙 Cancel</button>
+              </div>
+            </div>
+
+            {{ if .Status}}
+              <p>{{.Status}}</p>
+            {{ end }}
+      </main>
+    </article>
+
+</body></html>

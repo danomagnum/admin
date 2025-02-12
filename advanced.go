@@ -4,7 +4,7 @@ package admin
 // This will be called whether or not all the values are identical to their previous values.
 // the reference to the admin it was called from is passed in in case the admin should react to the event.
 type Notifyable interface {
-	Changed(*Admin)
+	AdminChanged(*Admin)
 }
 
 // Any struct implementing the Changer interface will have the Change() function called instead of being modified
@@ -17,7 +17,7 @@ type Notifyable interface {
 //
 // After change is called, the Notifyable interface is checked and called regardless of what this function does.
 type Changer interface {
-	Change(*Admin, any)
+	AdminChange(*Admin, any)
 }
 
 // Any struct implementing the Deleteable interface will have a [delete] button show up when editing the data.
@@ -26,9 +26,13 @@ type Changer interface {
 //
 // the reference to the admin it was called from is passed in in case the admin should react to the event.
 type Deleteable interface {
-	Delete(*Admin)
+	AdminDelete(*Admin)
 }
 
 type StatusIndicating interface {
-	Status() string
+	AdminStatus() string
+}
+
+type CustomDisplay interface {
+	AdminDisplay() string
 }

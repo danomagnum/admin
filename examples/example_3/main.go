@@ -47,7 +47,9 @@ func main() {
 		v.RegisterStruct("New Config3", &Config3{Name: "New Config3"})
 	})
 
-	mux.Handle("/admin/", v)
+	// when you want to add the admin mux to your own mux, you can do it like this:
+	// The string you pass to Mux() is the path prefix for the admin mux without the trailing slash.
+	mux.Handle("/admin/", v.Mux("/admin"))
 
 	log.Print("starting up...")
 
@@ -73,16 +75,16 @@ type Config struct {
 
 type Config2 struct {
 	Item01 string `descr:"This is a description"`
-	Item02 int
+	Item02 int    `adminHidden:"true"` // this will hide the field in the admin interface
 	Item03 float32
 	Item04 bool `descr:"I have a description too!"`
 }
 
-func (c *Config2) Changed(a *admin.Admin) {
+func (c *Config2) AdminChanged(a *admin.Admin) {
 	log.Printf("I was changed!!! %+v", *c)
 }
 
-func (c *Config2) Delete(a *admin.Admin) {
+func (c *Config2) AdminDelete(a *admin.Admin) {
 	log.Printf("I was baleeted!!! %+v", *c)
 }
 
@@ -91,7 +93,7 @@ type Config3 struct {
 	Value int
 }
 
-func (c *Config3) Change(a *admin.Admin, v any) {
+func (c *Config3) AdminChange(a *admin.Admin, v any) {
 	n, ok := v.(*Config3)
 	if !ok {
 		log.Printf("I should have been a Config3 but I wasn't!!  %T", v)

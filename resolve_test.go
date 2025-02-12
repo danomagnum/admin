@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	Thing1a testResolveSubStr
-	Thing1b testResolveSubStr
+	Thing1a testResolveSubStr `json:"thing1a"`
+	Thing1b testResolveSubStr `json:"thing1b"`
 }
 
 var config Config
@@ -27,21 +27,21 @@ func (o Options1) Enumerate() map[string]any {
 }
 
 type testResolveSubStr2 struct {
-	Name   string
-	Length float32
-	OK     bool
+	Name   string  `json:"name"`
+	Length float32 `json:"length"`
+	OK     bool    `json:"ok"`
 }
 
 type testResolveSubStr struct {
-	Name   string
-	Param1 int
-	Param2 float32
-	Param3 time.Time
-	Param4 time.Duration
-	Param5 bool
-	Param6 Options1
-	Param7 []int
-	Param8 []testResolveSubStr2
+	Name   string               `json:"name"`
+	Param1 int                  `json:"param1"`
+	Param2 float32              `json:"param2"`
+	Param3 time.Time            `json:"param3"`
+	Param4 time.Duration        `json:"param4"`
+	Param5 bool                 `json:"param5"`
+	Param6 Options1             `json:"param6"`
+	Param7 []int                `json:"param7"`
+	Param8 []testResolveSubStr2 `json:"param8"`
 }
 
 func TestResolve(t *testing.T) {
@@ -67,10 +67,16 @@ func TestResolve(t *testing.T) {
 	*/
 	x := testResolvefunc(&c)
 
-	d, _ := json.Marshal(c2)
+	d, err := json.Marshal(c2)
+	if err != nil {
+		t.Errorf("failed to marshal. %v", err)
+	}
 
 	log.Printf("before: %+v", c)
-	json.Unmarshal(d, x)
+	err = json.Unmarshal(d, x)
+	if err != nil {
+		t.Errorf("failed to unmarshal. %v", err)
+	}
 	log.Printf("after: %+v", c)
 
 }

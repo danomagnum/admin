@@ -3,6 +3,7 @@ package admin
 import (
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -11,10 +12,11 @@ import (
 )
 
 type FieldDescriptor struct {
-	Name  string
-	Descr string
-	Value any
-	Kind  reflect.Kind
+	Name   string
+	Descr  string
+	Hidden bool
+	Value  any
+	Kind   reflect.Kind
 }
 
 func GetNameToFieldMap(model any) []FieldDescriptor {
@@ -29,41 +31,132 @@ func GetNameToFieldMap(model any) []FieldDescriptor {
 		typ := t.Field(i).Type.Kind()
 		structValue := reflect.Indirect(v).FieldByName(name)
 		descr := t.Field(i).Tag.Get("descr")
-		nameToDataPointerMap = append(nameToDataPointerMap, FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ, Descr: descr})
+		HiddenTag := t.Field(i).Tag.Get("adminHidden")
+		hidden := false
+		if HiddenTag == "true" {
+			hidden = true
+		}
+
+		nameToDataPointerMap = append(nameToDataPointerMap, FieldDescriptor{Name: name, Value: structValue.Interface(), Kind: typ, Descr: descr, Hidden: hidden})
 	}
 	return nameToDataPointerMap
 }
 
+var formHiddenTemplate = template.Must(template.New("formHidden").Parse(`<input type="hidden" name="{{.Name}}" value="{{.Value}}">`))
+var formBoolTemplate = template.Must(template.New("formBool").Parse(`
+<fieldset>
+	<label for='{{.Name}}' title='{{.Descr}}'>
+		{{.Name}}
+	</label>
+	<input type='hidden' name='{{.Name}}' value='false'>
+	<input type="checkbox" name="{{.Name}}" {{if .Value}}checked{{end}}>
+	{{ if .Descr }}
+		<div class='formComment'>
+			{{.Descr}}
+		</div>
+	{{ end }}
+</fieldset>`))
+var formStringTemplate = template.Must(template.New("formString").Parse(`
+<fieldset>
+	<label for='{{.Name}}' title='{{.Descr}}'>
+		{{.Name}}
+	</label>
+	<input type="text" name="{{.Name}}" value='{{.Value}}'>
+	{{ if .Descr }}
+		<div class='formComment'>{{.Descr}}</div>
+	{{ end }}
+</fieldset>`))
+var formNumberTemplate = template.Must(template.New("formNumber").Parse(`
+<fieldset>
+	<label for='{{.Name}}' title='{{.Descr}}'>
+		{{.Name}}
+	</label>
+	<input type="number" name="{{.Name}}" value='{{.Value}}'>
+	{{ if .Descr }}
+		<div class='formComment'>
+			{{.Descr}}
+		</div>
+	{{ end }}
+</fieldset>`))
+var formDateTimeTemplate = template.Must(template.New("formDateTime").Parse(`
+<fieldset>
+	<label for='{{.Name}}' title='{{.Descr}}'>
+		{{.Name}}
+	</label>
+	<input type="datetime-local" name="{{.Name}}" value='{{.Value}}'>
+	{{ if .Descr }}
+		<div class='formComment'>
+			{{.Descr}}
+		</div>
+	{{ end }}
+</fieldset>`))
+var formUnknownTemplate = template.Must(template.New("formUnknown").Parse(`
+<fieldset>
+    <label for='{{.Name}}' title='{{.Descr}}'>
+		{{.Name}} (Uknown Type!!) 
+    </label>
+    <input type="text" name="{{.Name}}" value='{{.Value}}'>
+    {{ if .Descr }}
+		<div class='formComment'>
+			{{.Descr}}
+		</div>
+    {{ end }}
+</fieldset>`))
+
 func StructToForm(model any, timebase time.Duration) template.HTML {
 	m := GetNameToFieldMap(model)
+	var err error
 
 	s := strings.Builder{}
 	for _, v := range m {
-		s.WriteString(fmt.Sprintf("<label for='%s' title='%s'>%s</label>", v.Name, v.Descr, v.Name))
+		if v.Hidden {
+			err = formHiddenTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
+			//s.WriteString(fmt.Sprintf("<input type='hidden' name='%s' value='false'>\n", v.Name))
+			continue
+		}
 		switch x := v.Value.(type) {
 		case bool:
 			// checkboxes don't send their values on form updates if they're not checked.  So gorilla/schema
 			// will not update them to false.  This hidden field takes care of that.
-			s.WriteString(fmt.Sprintf("<input type='hidden' name='%s' value='false'>\n", v.Name))
-			if x {
-				s.WriteString(fmt.Sprintf("<input type='checkbox' name='%s' checked>\n", v.Name))
-			} else {
-				s.WriteString(fmt.Sprintf("<input type='checkbox' name='%s'>\n", v.Name))
+			err = formBoolTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
 			}
 		case string:
-			s.WriteString(fmt.Sprintf("<input type='text' name='%s' value='%v'>\n", v.Name, x))
+			err = formStringTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
 		case int, byte, int16, uint16, int32, uint32, int64, uint64, float32, float64:
-			s.WriteString(fmt.Sprintf("<input type='number' name='%s' value='%v'>\n", v.Name, x))
+			err = formNumberTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
 		case time.Duration:
-			s.WriteString(fmt.Sprintf("<input type='number' name='%s' value='%d'>\n", v.Name, x/timebase))
+			v.Value = x / timebase
+			err = formNumberTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
 		case time.Time:
-			s.WriteString(fmt.Sprintf("<input type='datetime-local' name='%s' value='%v'>\n", v.Name, x))
+			err = formDateTimeTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
 		default:
-			s.WriteString(fmt.Sprintf("!! Problem with %s (%T)", v.Name, x))
+			err = formUnknownTemplate.Execute(&s, v)
+			if err != nil {
+				slog.Error("Error executing template", "err", err)
+			}
 		}
-
 	}
 
+	// because we've already ran this string through the template engine, we can safely ignore the linter warning here
+	//
+	// #nosec G203
 	return template.HTML(s.String())
 
 }
@@ -96,7 +189,13 @@ func RespToStruct[T any](r *http.Request) (*T, error) {
 			default:
 				return t, fmt.Errorf("could not parse %s as bool for %s", val[0], key)
 			}
-		case reflect.Int:
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			v, err := strconv.ParseUint(val[0], 10, 64)
+			if err != nil {
+				return t, fmt.Errorf("could not parse int return value for %s: %w", key, err)
+			}
+			fv.SetUint(v)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			v, err := strconv.ParseInt(val[0], 10, 64)
 			if err != nil {
 				return t, fmt.Errorf("could not parse int return value for %s: %w", key, err)
@@ -110,6 +209,10 @@ func RespToStruct[T any](r *http.Request) (*T, error) {
 			fv.SetFloat(v)
 		case reflect.String:
 			fv.SetString(val[0])
+		case reflect.Invalid, reflect.Uintptr, reflect.Complex64, reflect.Complex128, reflect.Array, reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice, reflect.Struct, reflect.UnsafePointer:
+			return t, fmt.Errorf("unsupported type %s for %s", fv.Kind(), key)
+		default:
+			return t, fmt.Errorf("unsupported type %s for %s", fv.Kind(), key)
 		}
 
 	}
